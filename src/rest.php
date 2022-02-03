@@ -289,6 +289,8 @@ $config['rest_ip_blacklist'] = '';
 |
 */
 $config['rest_database_group'] = 'default';
+//config item to force uppercase column names when querying db:
+$config['rest_database_columns_uppercase'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
