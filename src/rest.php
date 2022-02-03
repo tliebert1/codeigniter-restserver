@@ -406,7 +406,8 @@ $config['rest_key_name'] = 'X-API-KEY';
 |
 */
 $config['rest_enable_logging'] = false;
-
+//Log http_headers:
+$config['rest_log_head_args'] = false;
 /*
 |--------------------------------------------------------------------------
 | REST API Logs Table Name
