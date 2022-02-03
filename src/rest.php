@@ -289,6 +289,8 @@ $config['rest_ip_blacklist'] = '';
 |
 */
 $config['rest_database_group'] = 'default';
+//config item to force uppercase column names when querying db:
+$config['rest_database_columns_uppercase'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
@@ -404,7 +406,8 @@ $config['rest_key_name'] = 'X-API-KEY';
 |
 */
 $config['rest_enable_logging'] = false;
-
+//Log http_headers:
+$config['rest_log_head_args'] = false;
 /*
 |--------------------------------------------------------------------------
 | REST API Logs Table Name

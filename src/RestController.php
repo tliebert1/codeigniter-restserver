@@ -372,12 +372,12 @@ class RestController extends \CI_Controller
             $this->_get_args,
             $this->_options_args,
             $this->_patch_args,
-            $this->_head_args,
             $this->_put_args,
             $this->_post_args,
             $this->_delete_args,
             $this->{'_'.$this->request->method.'_args'}
         );
+        $this->_args = ($this->config->item('rest_log_head_args') === true ? array_merge($this->_args, $this->_head_args) : $this->_args);
 
         // Extend this function to apply additional checking early on in the process
         $this->early_checks();
@@ -951,22 +951,38 @@ class RestController extends \CI_Controller
     protected function _log_request($authorized = false)
     {
         // Insert the request into the log table
+        //Crude way to get _insert_id:
+        $row = $this->rest->db->select_max('ID')->get( $this->config->item('rest_logs_table') )->row();
+        if (isset($row))
+        {
+            $this->_insert_id = $row->ID + 1;
+        }else {
+            $this->_insert_id = 1;
+        }
+        $log_record = array(
+            'id'         => $this->_insert_id,
+            'uri'        => $this->uri->uri_string(),
+            'method'     => $this->request->method,
+            'params'     => $this->_args ? ($this->config->item('rest_logs_json_params') === true ? json_encode($this->_args) : serialize($this->_args)) : null,
+            'api_key'    => isset($this->rest->key) ? $this->rest->key : '',
+            'ip_address' => $this->input->ip_address(),
+            'time'       => time(),
+            'authorized' => $authorized,
+        );
+
         $is_inserted = $this->rest->db
             ->insert(
                 $this->config->item('rest_logs_table'),
-                [
-                    'uri'        => $this->uri->uri_string(),
-                    'method'     => $this->request->method,
-                    'params'     => $this->_args ? ($this->config->item('rest_logs_json_params') === true ? json_encode($this->_args) : serialize($this->_args)) : null,
-                    'api_key'    => isset($this->rest->key) ? $this->rest->key : '',
-                    'ip_address' => $this->input->ip_address(),
-                    'time'       => time(),
-                    'authorized' => $authorized,
-                ]
+                ($this->config->item('rest_database_columns_uppercase') == true ? array_change_key_case($log_record,CASE_UPPER) : $log_record)
             );
 
         // Get the last insert id to update at a later stage of the request
-        $this->_insert_id = $this->rest->db->insert_id();
+        //$this->_insert_id = $this->rest->db->insert_id();
+        if(! $is_inserted )
+        {
+            $this->_insert_id = '';
+        }
+
 
         return $is_inserted;
     }
@@ -1914,13 +1930,12 @@ class RestController extends \CI_Controller
         }
 
         $payload['rtime'] = $this->_end_rtime - $this->_start_rtime;
+        $where['id'] = $this->_insert_id;
 
         return $this->rest->db->update(
             $this->config->item('rest_logs_table'),
-            $payload,
-            [
-                'id' => $this->_insert_id,
-            ]
+            ($this->config->item('rest_database_columns_uppercase') == true ? array_change_key_case($payload,CASE_UPPER) : $payload),
+            ($this->config->item('rest_database_columns_uppercase') == true ? array_change_key_case($where,CASE_UPPER) : $where)
         );
     }
 
@@ -1940,13 +1955,12 @@ class RestController extends \CI_Controller
         }
 
         $payload['response_code'] = $http_code;
+        $where['id'] = $this->_insert_id;
 
         return $this->rest->db->update(
             $this->config->item('rest_logs_table'),
-            $payload,
-            [
-                'id' => $this->_insert_id,
-            ]
+            ($this->config->item('rest_database_columns_uppercase') == true ? array_change_key_case($payload,CASE_UPPER) : $payload),
+            ($this->config->item('rest_database_columns_uppercase') == true ? array_change_key_case($where,CASE_UPPER) : $where)
         );
     }
 
